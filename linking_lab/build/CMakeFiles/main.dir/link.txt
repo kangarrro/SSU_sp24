@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -g -g CMakeFiles/main.dir/main.cpp.o -o main  leveldb/libleveldb.a 

@@ -1,23 +1,26 @@
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-struct node {
-	char key[100];
+#define MAX_LEVEL 16
+
+
+typedef struct Node {
+	char* key;
 	char* value;
-	struct node* next;
-};	
-typedef struct node node_t;
+    struct Node **forward;
+} Node;
 
 
-struct kvs{
-	struct node* db; // database
+typedef struct kvs{
+	Node* header; // database
+	int level;
 	int items; // number of data 
-};
-typedef struct kvs kvs_t; 
+} kvs_t;
 
 
 kvs_t* open();
+Node* createNode(int level, const char* key, const char* value);
 int close(kvs_t* kvs); // free all memory space 
 int put(kvs_t* kvs, const char* key, const char* value); // return -1 if failed.
 char* get(kvs_t* kvs, const char* key); // return NULL if not found. 
