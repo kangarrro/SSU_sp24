@@ -4,7 +4,7 @@ Node* createNode(int level, const char* key, const char* value) {
     Node *node = (Node *)malloc(sizeof(Node));
     if (!node) return NULL;
 
-    // key 메모리 할당 및 복사
+    // key
     node->key = (char *)malloc(strlen(key) + 1);
     if (!node->key) {
         free(node);
@@ -12,7 +12,7 @@ Node* createNode(int level, const char* key, const char* value) {
     }
     strcpy(node->key, key);
 
-    // value 메모리 할당 및 복사
+    // value
     node->value = (char *)malloc(strlen(value) + 1);
     if (!node->value) {
         free(node->key);
@@ -21,7 +21,6 @@ Node* createNode(int level, const char* key, const char* value) {
     }
     strcpy(node->value, value);
 
-    // forward 포인터 배열 메모리 할당
     node->forward = (Node **)malloc(sizeof(Node*) * (level + 1));
     if (!node->forward) {
         free(node->value);
@@ -49,7 +48,6 @@ kvs_t* open() {
         return NULL;
     }
 
-    printf("Open: kvs has %d items\n", kvs->items);
-
+    // printf("Open: kvs has %d items\n", kvs->items);
     return kvs;
 }

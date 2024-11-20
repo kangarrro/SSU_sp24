@@ -13,9 +13,9 @@ typedef struct Node {
 
 
 typedef struct kvs{
-	Node* header; // database
+	Node* header; // haeder
 	int level;
-	int items; // number of data 
+	int items;
 } kvs_t;
 
 

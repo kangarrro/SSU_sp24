@@ -1,0 +1,44 @@
+execve("./mycat", ["./mycat", "mary.txt", "into", "bob.txt"], 0x7ffd0987aa58 /* 35 vars */) = 0 // execve() : 주어진 path의 파일을 실행
+brk(NULL)                               = 0x56a3e9854000                            // heap 설정
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7ebef4dc6000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3                        // open ld.so.cache 동적라이브러리를 빠르게 참조하기 위해 사용
+fstat(3, {st_mode=S_IFREG|0644, st_size=24915, ...}) = 0
+mmap(NULL, 24915, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7ebef4dbf000
+close(3)                                = 0                                         // close 3(ld.so.cache)
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3         // open libc.so.6(Dynamic Library)
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\220\243\2\0\0\0\0\0"..., 832) = 832 // read libc.so.6(elf format)
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+fstat(3, {st_mode=S_IFREG|0755, st_size=2125328, ...}) = 0
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+mmap(NULL, 2170256, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7ebef4a00000    // 메모리 할당
+mmap(0x7ebef4a28000, 1605632, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x28000) = 0x7ebef4a28000 // 어떤 메모리를 할당하는지는 잘모르겠습니다.
+mmap(0x7ebef4bb0000, 323584, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1b0000) = 0x7ebef4bb0000
+mmap(0x7ebef4bff000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1fe000) = 0x7ebef4bff000
+mmap(0x7ebef4c05000, 52624, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7ebef4c05000
+close(3)                                = 0                                         // close 4(libc.so.6)
+mmap(NULL, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7ebef4dbc000
+arch_prctl(ARCH_SET_FS, 0x7ebef4dbc740) = 0
+set_tid_address(0x7ebef4dbca10)         = 4792
+set_robust_list(0x7ebef4dbca20, 24)     = 0
+rseq(0x7ebef4dbd060, 0x20, 0, 0x53053053) = 0
+mprotect(0x7ebef4bff000, 16384, PROT_READ) = 0
+mprotect(0x56a3e8184000, 4096, PROT_READ) = 0
+mprotect(0x7ebef4dfe000, 8192, PROT_READ) = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+munmap(0x7ebef4dbf000, 24915)           = 0                                         // /etc/ld.so.cache 해제
+// -------------------- loader ------------------------
+// 여기서 부터 ./mycat 부분인 것 같습니다.
+openat(AT_FDCWD, "mary.txt", O_RDONLY)  = 3                                         // open file "mary.txt" -> 3
+getrandom("\xcc\x74\xab\x78\xde\x20\x3c\xc3", 8, GRND_NONBLOCK) = 8
+brk(NULL)                               = 0x56a3e9854000                            // heap 설정
+brk(0x56a3e9875000)                     = 0x56a3e9875000
+dup2(3, 0)                              = 0                                         // mary.txt -> stdin
+openat(AT_FDCWD, "bob.txt", O_WRONLY|O_CREAT|O_TRUNC, 000) = 4                      // open file "bob.txt" -> 4
+dup2(4, 1)                              = 1                                         // bob.txt -> stdout
+read(3, "Mary had a little lamb,\nIts flee"..., 512) = 190                          // read 3(mary.txt)
+write(1, "Mary had a little lamb,\nIts flee"..., 512) = 512                         // write 1(stdout)
+close(4)                                = 0                                         // close 4(bob.txt)
+close(3)                                = 0                                         // close 3(mary.txt)
+exit_group(0)                           = ?                                         // exit
++++ exited with 0 +++
