@@ -32,9 +32,8 @@ int put(kvs_t* kvs, const char* key, const char* value) {
 
     // 탐색위치에 이미 노드가 존재하는 경우
     current = current->forward[0];
-
     if (current && strcmp(current->key, key) == 0) {
-         char *new_value = (char *)malloc(value_size);
+        char *new_value = (char *)malloc(value_size);
         if (!new_value){
             perror("Error updating existing node value (malloc failed)");
             return -1;   
@@ -42,6 +41,9 @@ int put(kvs_t* kvs, const char* key, const char* value) {
         free(current->value); // 기존 value 해제
         current->value = new_value;
         strcpy(current->value, value);
+
+        kvs->total_data_size += value_size - current->value_size;
+        current->value_size = value_size;
         return 0;
     }
 
@@ -63,7 +65,6 @@ int put(kvs_t* kvs, const char* key, const char* value) {
     }
 
     kvs->items++;
-
-    // printf("put succes Items : %d KEY : %s\n", new_node->id, key);
+    kvs->total_data_size += new_node->key_size + new_node->value_size;
     return 0;
 }

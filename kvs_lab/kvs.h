@@ -3,20 +3,18 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stdint.h>
-#include <sys/mman.h>
-#include <fcntl.h>
 
 #define MAX_LEVEL 16
 
 
-typedef struct node { // 164
-	unsigned int id; // 노드를 식별하기 위한 id(snapshot 저장시에 메모리주소 대신 활용) 4
+typedef struct node {
+	unsigned int id; // 노드를 식별하기 위한 id(snapshot 저장시에 메모리주소 대신 활용)
 
-	size_t key_size; // 8
-	size_t value_size; // 8
-	char *key; // 8
-	char *value; // 8
-	struct node *forward[MAX_LEVEL]; // 8*16
+	size_t key_size;
+	size_t value_size;
+	char *key;
+	char *value;
+	struct node *forward[MAX_LEVEL];
 } __attribute__((packed)) node_t;
 
 
@@ -24,6 +22,7 @@ typedef struct kvs{
 	node_t *header; // haeder
 	int level; // max level
 	int items; // number of item
+	size_t total_data_size;
 	char is_recovered;
 } __attribute__((packed)) kvs_t;
 
@@ -36,3 +35,6 @@ char* get(kvs_t* kvs, const char* key); // key를 이용해 검색
 
 int do_snapshot(kvs_t *kvs, char* path); // kvs를 저장
 kvs_t* do_recovery(char* path); // 저장된 kvs를 메모리로 불러옴.
+
+int do_snapshot_baseline(kvs_t *kvs, char *path);
+kvs_t* do_recovery_baseline(char* path);

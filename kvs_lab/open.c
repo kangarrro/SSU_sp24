@@ -40,8 +40,13 @@ node_t *create_node(unsigned int max_level, const char *key, const char *value, 
 kvs_t* kvs_open(char *path, unsigned int max_level) {
     kvs_t *kvs;
     
-    if(path){
+    if(path != NULL){
+#ifndef USE_BASELINE
         kvs = do_recovery(path);
+#else
+        kvs = do_recovery_baseline(path);
+#endif
+        printf("Open: kvs has %d items\n", kvs->items);
         return kvs; // if failed to recovery : return NULL
     }
 
@@ -49,15 +54,15 @@ kvs_t* kvs_open(char *path, unsigned int max_level) {
     kvs = (kvs_t *)malloc(sizeof(kvs_t));
     if (!kvs) return NULL;
 
-    kvs->header = create_node(max_level, "\x01", "HEADER", 1);
-    kvs->level = max_level;
-    kvs->items = 0;
-    kvs->is_recovered = 0;
-
+    kvs->header = create_node(max_level, "\x01", "head", 1);
     if (!kvs->header) {
         free(kvs);
         return NULL;
     }
+    kvs->level = max_level;
+    kvs->items = 0;
+    kvs->total_data_size = 5; // include header
+    kvs->is_recovered = 0;
 
     printf("Open: kvs has %d items\n", kvs->items);
     return kvs;

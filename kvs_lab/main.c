@@ -23,7 +23,7 @@ int main() {
         fclose(file);
         return 1;
     }
-    int i = 0;
+    
     while ((line_len = getline(&line_buf, &buf_size, file)) != -1) {
         if (line_buf[line_len - 1] == '\n') {
             line_buf[line_len - 1] = '\0';
@@ -45,24 +45,24 @@ int main() {
     }
     fclose(file);
 
-
-    if(!do_snapshot(kvs, "./kvs.img")){
+#ifndef USE_BASELINE
+    if(do_snapshot(kvs, "./kvs.img")){
         perror("failed to save snapshot");
+        return 0;
     }
-
-    kvs_t *new_kvs = kvs_open("./kvs.img", MAX_LEVEL);
-    // kvs_t *new_kvs = do_recovery("./kvs.img");
+#else
+    if(do_snapshot_baseline(kvs, "./kvs.img")){
+        perror("failed to save snapshot");
+        return 0;
+    }
+#endif
     kvs_close(kvs);
+    
+    
+    kvs = kvs_open("./kvs.img", MAX_LEVEL);
 
-    put(new_kvs, "tweet105", "test plz");
-    printf("\nItems : %u, Level : %u\n", new_kvs->items, new_kvs->level);
-
-    // node_t *current = new_kvs->header->forward[0];
-    // while (current) {
-    //     // printf("KEY : %s  ", current->key);
-    //     current = current->forward[0];
-    // }
-    kvs_close(new_kvs);
+    printf("tweet55 : %s\n\ntweet13843 : %s\n\ntweet3482 : %s\n", get(kvs, "tweet55"), get(kvs, "tweet13843"), get(kvs, "tweet3482"));
+    kvs_close(kvs);
     return 0;
 }
 
