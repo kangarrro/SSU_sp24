@@ -1,6 +1,7 @@
 #include "kvs.h"
-#define BUFF_SIZE 512
 
+
+//define MAX_LEVEL 8
 
 int main() {
     char *line_buf;

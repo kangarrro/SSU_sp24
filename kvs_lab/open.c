@@ -3,8 +3,10 @@
 
 node_t *create_node(unsigned int max_level, const char *key, const char *value, unsigned int id) {
     node_t *node = (node_t *)malloc(sizeof(node_t));
-    if (!node) return NULL;
-
+    if (!node) {
+        perror("Failed to allocate node");
+        return NULL;
+    }
     // id
     node->id = id;
 
@@ -17,17 +19,16 @@ node_t *create_node(unsigned int max_level, const char *key, const char *value, 
     // key
     node->key = (char *)malloc(node->key_size);
     if (!node->key) {
-        free(node);
-        return NULL;
+        perror("Failed to allocate key");
+        goto node_free;
     }
     strcpy(node->key, key);
 
     // value
     node->value = (char *)malloc(value_len);
     if (!node->value) {
-        free(node->key);
-        free(node);
-        return NULL;
+        perror("Failed to allocate value");
+        goto key_free;
     }
     strcpy(node->value, value);
 
@@ -35,6 +36,14 @@ node_t *create_node(unsigned int max_level, const char *key, const char *value, 
         node->forward[i] = NULL;
 
     return node;
+
+value_free:
+    free(node->value);
+key_free:
+    free(node->key);
+node_free:
+    free(node);
+    return NULL;
 }
 
 kvs_t* kvs_open(char *path, unsigned int max_level) {

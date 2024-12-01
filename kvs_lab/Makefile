@@ -1,43 +1,21 @@
 SRCS = main.c
-LIBSRCS = open.c close.c put.c get.c 
-TARG = kvs_static
-TARG_DYNAMIC = kvs_dynamic
+LIBSRCS = open.c close.c put.c get.c backup.c
+TARG = custom
+TARG_BASELINE = baseline
 
 CC = gcc
-OPTS = -Wall -g -fPIC
-LIBS_STATIC = -L. -lkvs
-LIBS_DYNAMIC = -L. -lkvs -Wl,-rpath=.
+OPTS = -g -fPIC
 
-OBJS = $(SRCS:.c=.o)
-LOBJS = $(LIBSRCS:.c=.o)
-LARS = libkvs.a
-LIB_DYNAMIC = libkvs.so
+all: custom baseline
 
-all: static dynamic
+# Custom target
+custom:
+	$(CC) $(OPTS) $(SRCS) $(LIBSRCS) -o $(TARG)
 
-# Static build target
-static: $(TARG)
-
-$(TARG): $(OBJS) $(LARS)
-	$(CC) -o $(TARG) $(OBJS) $(LIBS_STATIC) -static
-
-$(LARS): $(LOBJS)
-	ar rs $(LARS) $(LOBJS)
-
-# Dynamic library build target
-$(LIB_DYNAMIC): $(LOBJS)
-	$(CC) -shared -o $(LIB_DYNAMIC) $(LOBJS)
-
-# Dynamic build target
-dynamic: $(TARG_DYNAMIC)
-
-$(TARG_DYNAMIC): $(OBJS) $(LIB_DYNAMIC)
-	$(CC) -o $(TARG_DYNAMIC) $(OBJS) $(LIBS_DYNAMIC)
-
-# Compile source files to object files
-%.o: %.c
-	$(CC) $(OPTS) -c $< -o $@
+# Baseline target
+baseline:
+	$(CC) $(OPTS) -DUSE_BASELINE $(SRCS) $(LIBSRCS) -o $(TARG_BASELINE)
 
 # Clean target
 clean:
-	rm -f $(OBJS) $(LOBJS) $(LARS) $(TARG) $(TARG_DYNAMIC) $(LIB_DYNAMIC)
+	rm -f $(TARG) $(TARG_BASELINE)

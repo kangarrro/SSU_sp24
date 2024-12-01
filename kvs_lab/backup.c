@@ -51,10 +51,22 @@ int do_snapshot(kvs_t *kvs, char *path) {
     };
 
     int fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    if(fd < 0) {
+        perror("Failed to open file");
+        return -1;
+    }
+    
     size_t file_size = sizeof(struct kvs_file_header) + sizeof(kvs_t) + header.node_section_size + header.data_section_size;
-    ftruncate(fd, file_size);
+    if(ftruncate(fd, file_size) == -1) {
+        perror("Failed to resize file");
+        goto file_close;
+    }
 
     void *buff = mmap(NULL, file_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    if(buff == MAP_FAILED) {
+        perror("Failed to mapping memory");
+        goto file_close;
+    }
     memcpy(buff, &header, sizeof(struct kvs_file_header ));
     memcpy((char *)buff + sizeof(struct kvs_file_header ), kvs, sizeof(kvs_t));
 
@@ -89,11 +101,21 @@ int do_snapshot(kvs_t *kvs, char *path) {
 
     if (msync(buff, file_size, MS_SYNC) < 0) {
         perror("Failed to sync file");
+        goto mem_free;
+    }
+    if (fsync(fd) < 0) {
+        perror("Failed to sync file");
+        goto mem_free;
     }
     munmap(buff, file_size);
-    fsync(fd);
     close(fd);
     return 0;
+
+mem_free:
+    munmap(buff, file_size);
+file_close:
+    close(fd);
+    return -1;
 }
 
 int do_snapshot_baseline(kvs_t *kvs, char* path) {
@@ -107,6 +129,10 @@ int do_snapshot_baseline(kvs_t *kvs, char* path) {
     };
 
     FILE *file = fopen(path, "wb");
+    if(!file) {
+        perror("Failed to open file");
+        return -1;
+    }
     fwrite(&header, sizeof(struct kvs_file_header), 1, file);
     fwrite(kvs, sizeof(kvs_t), 1, file);
     
@@ -121,7 +147,6 @@ int do_snapshot_baseline(kvs_t *kvs, char* path) {
     current = kvs->header;
     uint64_t offset_8;
     while(current) {
-        // fwrite(&current, sizeof(node_t)-sizeof(current->forward), 1, file);
         fwrite(&current->id, sizeof(unsigned int), 1, file);
         fwrite(&current->key_size, sizeof(size_t), 1, file);
         fwrite(&current->value_size, sizeof(size_t), 1, file);
@@ -141,54 +166,55 @@ int do_snapshot_baseline(kvs_t *kvs, char* path) {
         fwrite(current->value, sizeof(char), current->value_size, file);
         current = current->forward[0];
     }
-    fsync(fileno(file));
+    if(fsync(fileno(file)) < 0) {
+        perror("Failed to sync file");
+        fclose(file);
+        return -1;
+    }
     fclose(file);
     return 0;
 }
 
 
 // recovery snapShot(.img) by path
-kvs_t* do_recovery(char* path) {
+kvs_t *do_recovery(char* path) {
     printf("\nRecovery KVS : %s\n", path);
 
     // 파일 열기 및 매핑
     int fd = open(path, O_RDONLY);
-
-    // void *memmory = mmap(NULL, file_stat.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-    // struct kvs_file_header *file_header = (struct kvs_file_header *)memory;
+    if(fd < 0) {
+        perror("Failed to open file");
+        return NULL;
+    }
 
     // KVS File Header
     struct kvs_file_header *file_header = malloc(sizeof(struct kvs_file_header));
+    if(!file_header) {
+        perror("Failed to allocate header");
+        goto file_close;
+    }
     read(fd, file_header, sizeof(struct kvs_file_header));
     lseek(fd, sizeof(struct kvs_file_header), SEEK_SET);
 
     if (strncmp(file_header->kvs_name, "KVS", 3) != 0) {
         printf("Invalid KVS identifier in file\n");
-        free(file_header);
-        return NULL;
+        goto header_free;
     }
     // 파일에서 .node, .data의 위치 기록
     size_t node_offset = file_header->kvs_size;
     size_t data_offset = node_offset + file_header->node_section_size;
-
-    // kvs
     size_t kvs_all_size = file_header->kvs_size + file_header->node_section_size + file_header->data_section_size;
-    free(file_header);
 
     void *memory = malloc(kvs_all_size);
     if (!memory) {
         perror("Failed to allocate memory");
-        close(fd);
-        return NULL;
+        goto header_free;
     }
 
     if (read(fd, memory, kvs_all_size) != kvs_all_size) {
         perror("Failed to read file");
-        free(memory);
-        close(fd);
-        return NULL;
+        goto mem_free;
     }
-    close(fd);
 
     // KVS 복구
     kvs_t *kvs = (kvs_t *)(char *)memory;
@@ -212,50 +238,56 @@ kvs_t* do_recovery(char* path) {
             node_section[i].forward[level] = id ? (node_t *) &node_section[id-99] : NULL;
         }
     }
+    free(file_header);
+    close(fd);
     return kvs;
+
+mem_free:
+    free(memory);
+header_free:
+    free(file_header);
+file_close:
+    close(fd);
+    return NULL;
 }
 
-kvs_t* do_recovery_baseline(char* path) {
+kvs_t *do_recovery_baseline(char* path) {
     printf("\nRecovery KVS(baseline) : %s\n", path);
 
     // 파일 열기 및 매핑
     FILE *file = fopen(path, "rb");
-
-    // void *memmory = mmap(NULL, file_stat.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-    // struct kvs_file_header *file_header = (struct kvs_file_header *)memory;
-
+    if(!file) {
+        perror("Failed to open file");
+        return NULL;
+    }
     // KVS File Header
     struct kvs_file_header *file_header = malloc(sizeof(struct kvs_file_header));
+    if(!file_header) {
+        perror("Failed to allocate header");
+        goto file_close;
+    }
     fread(file_header, sizeof(struct kvs_file_header), 1, file);
     fseek(file, sizeof(struct kvs_file_header), SEEK_SET);
 
     if (strncmp(file_header->kvs_name, "KVS", 3) != 0) {
         printf("Invalid KVS identifier in file\n");
-        free(file_header);
-        return NULL;
+        goto header_free;
     }
     // 파일에서 .node, .data의 위치 기록
     size_t node_offset = file_header->kvs_size;
     size_t data_offset = node_offset + file_header->node_section_size;
-
-    // kvs
     size_t kvs_all_size = file_header->kvs_size + file_header->node_section_size + file_header->data_section_size;
-    free(file_header);
 
     void *memory = malloc(kvs_all_size);
     if (!memory) {
         perror("Failed to allocate memory");
-        fclose(file);
-        return NULL;
+        goto header_free;
     }
 
     if (fread(memory, 1, kvs_all_size, file) != kvs_all_size) {
         perror("Failed to read file");
-        free(memory);
-        fclose(file);
-        return NULL;
+        goto mem_free;
     }
-    fclose(file);
 
     // KVS 복구
     kvs_t *kvs = (kvs_t *)(char *)memory;
@@ -279,5 +311,15 @@ kvs_t* do_recovery_baseline(char* path) {
             node_section[i].forward[level] = id ? (node_t *) &node_section[id-99] : NULL;
         }
     }
+    free(file_header);
+    fclose(file);
     return kvs;
+
+mem_free:
+    free(memory);
+header_free:
+    free(file_header);
+file_close:
+    fclose(file);
+    return NULL;
 }
