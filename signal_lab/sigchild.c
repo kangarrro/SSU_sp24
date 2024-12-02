@@ -45,7 +45,7 @@ int main() {
 
     ccount = NUM;
 
-    signal(SIGCHLD, child_handler2);
+    signal(SIGCHLD, child_handler1);
 
     for(i = 0; i< NUM; i++) {
         if((pid[i] = fork()) == 0) {
