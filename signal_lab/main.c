@@ -23,9 +23,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    for(i = 0; i<NUM; i++)
-        printf("PID : %d, ", pid[i]);
-    printf("\n");
+    // for(i = 0; i<NUM; i++)
+    //     printf("PID : %d, ", pid[i]);
+    // printf("\n");
 
     for(i = 0; i < NUM; i++) { // Parent kill
         printf("Killing process\n");
