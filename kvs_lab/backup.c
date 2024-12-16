@@ -32,7 +32,7 @@
 */
 
 struct kvs_file_header {
-    char kvs_name[4];          // KVS 식별자 (e.g., "KVS\0")
+    char kvs_name[4];          // KVS 식별자 ("KVS\0")
     size_t kvs_size;           // kvs_t 구조체 크기
     size_t node_section_size;  // .node 섹션 크기
     size_t data_section_size;  // .data 섹션 크기

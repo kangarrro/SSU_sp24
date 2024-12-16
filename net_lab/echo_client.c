@@ -38,5 +38,6 @@ int main(int argc, char **argv) {
         rbytes = read(client_fd, buf, MAXLINE);
         fputs(buf, stdout);
     }
-    close(client_fd)
+    close(client_fd);
+    return 0;
 }

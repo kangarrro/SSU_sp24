@@ -15,10 +15,9 @@ int put(kvs_t* kvs, const char* key, const char* value) {
         perror("Parameter error: put() received NULL arguments");
         return -1;
     }
-
+    
     size_t key_size = strlen(key) + 1;
     size_t value_size = strlen(value) + 1;
-
     node_t *update[kvs->level];
     node_t *current = kvs->header;
 
@@ -29,7 +28,6 @@ int put(kvs_t* kvs, const char* key, const char* value) {
         }
         update[i] = current;
     }
-
     // 탐색위치에 이미 노드가 존재하는 경우
     current = current->forward[0];
     if (current && strcmp(current->key, key) == 0) {

@@ -1,6 +1,4 @@
 #include "kvs.h"
-
-
 //define MAX_LEVEL 8
 
 int main() {
@@ -20,17 +18,16 @@ int main() {
 
     kvs_t* kvs = kvs_open(NULL, MAX_LEVEL);
     if (!kvs) {
-        perror("Failed to initialize key-value store");
+        perror("Failed to initialize kvs");
         fclose(file);
         return 1;
     }
     
     while ((line_len = getline(&line_buf, &buf_size, file)) != -1) {
-        if (line_buf[line_len - 1] == '\n') {
+        if (line_buf[line_len - 1] == '\n')
             line_buf[line_len - 1] = '\0';
-        }
-        line_buf[strcspn(line_buf, "\n")] = 0;
 
+        line_buf[strcspn(line_buf, "\n")] = 0;
         // parse line
         command = strtok(line_buf, ",");
         key = strtok(NULL, ",");
@@ -39,7 +36,6 @@ int main() {
         if (strcmp(command, "get") == 0){
             // pass now (search by key)
         }
-
         if (strcmp(command, "set") == 0){
             put(kvs, key, value);
         }
@@ -58,12 +54,10 @@ int main() {
     }
 #endif
     kvs_close(kvs);
-    
-    
-    kvs = kvs_open("./kvs.img", MAX_LEVEL);
+    kvs_t *new_kvs = kvs_open("./kvs.img", MAX_LEVEL);
 
-    printf("tweet55 : %s\n\ntweet13843 : %s\n\ntweet3482 : %s\n", get(kvs, "tweet55"), get(kvs, "tweet13843"), get(kvs, "tweet3482"));
-    kvs_close(kvs);
+    printf("tweet55 : %s\n\ntweet13843 : %s\n\ntweet3482 : %s\n", get(new_kvs, "tweet55"), get(new_kvs, "tweet13843"), get(new_kvs, "tweet3482"));
+    kvs_close(new_kvs);
     return 0;
 }
 
